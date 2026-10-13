@@ -46,8 +46,7 @@
 ### 1. 获取代码
 
 ```bash
-git clone <仓库地址>
-cd ooad
+git clone https://github.com/qa22official/CommonRBAC.git
 ```
 
 ### 2. 验证后端骨架
