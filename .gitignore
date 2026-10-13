@@ -1,0 +1,43 @@
+# Maven
+target/
+
+# Frontend dependencies and build output
+web/node_modules/
+web/dist/
+
+# Local configuration and environment files
+.env
+.env.*
+!.env.example
+*.local
+application-local.yml
+application-local.yaml
+
+# Logs, reports and runtime files
+*.log
+logs/
+*.pid
+
+# Database dumps and local data
+*.sql.gz
+*.dump
+*.bak
+compose.override.yml
+docker-compose.override.yml
+mysql-data/
+redis-data/
+
+# Certificates and private keys
+*.key
+*.pem
+*.p12
+*.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
