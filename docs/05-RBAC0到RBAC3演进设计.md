@@ -1,6 +1,6 @@
 # 05 · RBAC0 → RBAC3 演进设计
 
-相关文档：[00 基线](./00-编码代理工作基线.md) · [01 需求](./01-需求规格说明书.md) · [02 总体设计](./02-总体设计说明书.md) · [03 数据模型](./03-数据模型设计.md) · [04 接口](./04-接口设计.md)
+相关文档：[00 基线](./00-编码代理工作基线.md) · [01 需求](./01-需求规格说明书.md) · [02 总体设计](./02-总体设计说明书.md) · [03 数据模型](./03-数据模型设计.md) · [04 接口](./04-接口设计.md) · [07 修订记录](./07-修订记录.md)
 
 ## 1. 四个层次的定义
 
@@ -26,7 +26,7 @@ RBAC1 改变读路径（怎么算出权限），RBAC2 改变写路径（允不�
 | 阶段 | 目标 | 数据变化 | 代码变化 | 权限声明 | 鉴权入口 | 前端变化 |
 |---|---|---|---|---|---|---|
 | 0 | RBAC0 上线 | 6 张表（继承字段已预留） | 全新实现 | 新增 | 全新实现 | 全新实现 |
-| 1 | RBAC1 继承 | 填继承关系值 | 权限计算实现 + 缓存加载 SQL | 不变 | 不变 | 角色列表改树形；新增继承来源选择 |
+| 1 | RBAC1 继承 | 填继承关系值 | 权限计算实现 + 快照加载 SQL | 不变 | 不变 | 角色列表改树形；新增继承来源选择 |
 | 2 | RBAC2 约束 | 新增 `sys_role_constraint` + 规则数据 | 新增校验器实现类 | 不变 | 不变 | 新增约束管理页；授权失败提示 |
 | 3 | RBAC3 | 无 | 无 | 不变 | 不变 | 无 |
 
@@ -34,7 +34,7 @@ RBAC1 改变读路径（怎么算出权限），RBAC2 改变写路径（允不�
 
 | 维度 | 阶段 1 | 阶段 2 |
 |---|---|---|
-| 代码变更 | 继承链展开 + 环检测、缓存加载 SQL | 2 个校验器实现类 |
+| 代码变更 | 继承链展开 + 环检测、快照加载 SQL | 2 个校验器实现类 |
 | 数据迁移 | 填继承关系（可按角色灰度） | 新增约束规则 |
 | 接口新增 | `GET /api/roles/tree`；角色接口新增可选字段 | 约束规则 CRUD |
 | 前端变更 | 角色列表改树形、表单单选 | 约束管理页、失败提示文案 |
@@ -80,10 +80,8 @@ RBAC1 改变读路径（怎么算出权限），RBAC2 改变写路径（允不�
 
 ```text
 hasPermission(userId, requiredCode):
-    codes ← resolve(userId)
-    return codes.contains(requiredCode)
-        || codes.contains("*")
-        || codes.contains(prefixWildcard(requiredCode))   // sys:user:* 命中 sys:user:delete
+    return PermissionMatcher.matches(resolve(userId), requiredCode)
+    // 内部：精确匹配优先；再按 ':' 逐层尝试前缀通配，如 sys:user:* 命中 sys:user:delete
 ```
 
 前缀通配匹配只在用户权限集合含通配项时触发；普通用户只走一次 `HashSet.contains`。
@@ -132,7 +130,8 @@ RBAC0 链上的校验器：
 | 并集语义 | 当前角色权限 = 自身 ∪ 链上全部角色的权限 |
 | 不支持减去 | 不存在"链上有 A 但本角色不要 A"的表达；否则结果依赖遍历顺序 |
 | 无继承行为不变 | `inherit_role_id = 0` 时与 RBAC0 行为完全一致 |
-| 链深上限 | 5 层 |
+| 链深上限 | 5 层（沿 `inherit_role_id` 的边数） |
+| 继承形态 | 单父链：每个角色最多一个 `inherit_role_id`；标准 RBAC1 的多父 DAG 不在本期，未来需新增 `sys_role_inheritance` 表 |
 | 界面展示方向 | 渲染方向自由（可把权限最大的角色画在顶部），不影响数据方向 |
 
 数据层只能有一个明确方向；展示方向是渲染问题，不得转嫁到数据模型。
@@ -148,7 +147,7 @@ RBAC0 链上的校验器：
 
 灰度：先给 1~2 个角色配置，观察后再放开。未配置继承的角色行为不变，风险被限制在已配置的角色上。
 
-### 4.3 实现时机决策（D-2，待定）
+### 4.3 实现时机决策（待定）
 
 | 项 | 方案甲：阶段 0 就实现展开 | 方案乙：升级时再实现 |
 |---|---|---|
@@ -164,49 +163,55 @@ RBAC0 链上的校验器：
 | 风险 | 对策 |
 |---|---|
 | 逻辑在生产从未生效 | 单元测试覆盖多层、菱形汇聚、成环；阶段 0 末期做一次升级预演 |
-| 环检测本身有缺陷 | 访问集合 + 深度上限双重保护，深度上限保证不死循环 |
+| 环检测本身有缺陷 | 访问集合 + 路径深度上限双重保护，深度上限保证不死循环 |
 | 深链拖慢计算 | 深度上限 5；按角色 ID 去重 |
 
 ### 4.4 权限计算算法（RBAC1）
 
 ```text
 1. directRoles ← userRoleMap[userId]
-2. directRoles ← { r | roleStatus[r] = 启用 }
-3. effectiveRoles ← 展开继承链(directRoles)        ★ 唯一新增步骤
-4. codes ← ∪ { rolePermMap[r] | r ∈ effectiveRoles }
-5. codes ← { c | permEnabled[c] = true }
+2. effectiveRoles ← 展开继承链(directRoles)        ★ 唯一新增步骤
+3. codes ← ∪ { rolePermMap[r] | r ∈ effectiveRoles }   // 快照只含启用权限，无需再过滤
 
 展开继承链(起步集合):
-    result ← {}; queue ← 起步集合
-    while queue 非空:
-        r ← queue.poll()
-        if r ∈ result: continue              // 菱形汇聚去重
-        if result.size() > 5: 抛异常          // 环与超深保护
-        result.add(r)
-        src ← inheritRoleMap[r]
-        if src ≠ 0: queue.add(src)
+    result ← {}
+    for start in 起步集合:
+        if roleStatus[start] ≠ 启用: continue
+        path ← [start]; r ← start; depth ← 0; cycle ← false
+        while true:
+            src ← inheritRoleMap[r]
+            if src = 0: break
+            if src ∈ path: 告警("环"); cycle ← true; break
+            if depth + 1 > 5: 告警("超深"); break
+            path.add(src); r ← src; depth ← depth + 1
+        if cycle:
+            result.add(start)                  // 降级为 RBAC0：只保留直接角色
+        else:
+            for x in path:
+                if roleStatus[x] ≠ 启用: break // 停用角色及其上游链不生效
+                result.add(x)
 ```
+
+深度是沿 `inherit_role_id` 的边数，不是 `result` 的大小。6 个直接角色、宽菱形都不得触发深度告警；成环时只保留直接角色并告警，不抛异常。
 
 实现约束：
 
 | 项 | 要求 |
 |---|---|
-| 数据来源 | 内存缓存（`inheritRoleMap`、`roleStatus`），不查库 |
+| 数据来源 | `PermissionSnapshot`（`inheritRoleMap`、`roleStatus`、`rolePermMap`），不查库 |
 | 是否缓存最终权限集合 | 不缓存；只缓存事实。否则"给被继承角色加权限"会使所有下游角色用户的缓存失效 |
 | 环的处理 | 告警 + 按"不加继承"处理（降级为 RBAC0 行为），不拒绝请求 |
-| 停用角色 | 停用后仍保留在链中，但不进入有效集合 |
+| 停用角色 | 停用角色及其上游链不进入有效集合；继承方自身权限仍生效 |
 
 ### 4.5 缓存变化
 
 | 缓存 | 变化 |
 |---|---|
-| A：roleId → 权限码集合 | 不变 |
-| B：userId → roleId 集合 | 不变 |
-| C：roleId → inheritRoleId | 新增（约 500 条） |
-| roleId → status | 不变 |
-| permissionCode → enabled | 不变 |
+| `PermissionSnapshot` | 新增 `roleId → {status, inheritRoleId}`；角色权限、用户角色、权限启用仍在同一快照内 |
+| `IdentitySnapshot` | 不变 |
+| 权限树 | 直接查库，不新增缓存 |
 
-缓存 C 可并入缓存 A 的重载查询：`SELECT id, inherit_role_id, status FROM sys_role`。升级时必须同步修改缓存加载 SQL。
+继承关系与角色状态一起进入 `PermissionSnapshot`：快照加载查询多取 `SELECT id, inherit_role_id, status FROM sys_role`。升级时必须同步修改快照加载 SQL，不新增独立缓存对象。
 
 ### 4.6 接口变化
 
@@ -257,8 +262,10 @@ RBAC0 链上的校验器：
 | 7 | 配置成环 | 接口拒绝（40930） |
 | 8 | 已存在的环（脏数据） | 降级为 RBAC0 行为 + 告警，不返回 500 |
 | 9 | 权限变更广播 | 修改被继承角色权限后，链尾角色用户 1 秒内生效 |
-| 10 | 缓存重建 | 重建后包含 `inheritRoleId` |
+| 10 | 快照重建 | 重建后包含 `inheritRoleId` |
 | 11 | 全量权限快照对比 | 未配置继承的用户升级前后零差异 |
+| 12 | 6 个直接角色、无继承 | 不抛异常，权限为 6 个角色并集 |
+| 13 | 深度 5 / 6 | 5 层可用；第 6 层告警并跳过，不抛异常 |
 
 第 6 项覆盖"不会报错、只会静默越权"的缺陷类型。
 
@@ -301,7 +308,7 @@ interface ConstraintValidator {
 | 失败即整体拒绝 | 不允许部分成功 |
 | 只读 | 不写库，保证链可重复执行 |
 
-命令对象需提供操作完成后的**最终集合**，而非增量。理由：约束判定针对"结果是否合法"，提供最终集合可避免每个校验器各自推演"当前集合 + 增量"。
+命令对象需提供操作完成后的**最终集合**，而非增量。理由：约束判定针对"结果是否合法"，提供最终集合可避免每个校验器各自推演"当前集合 + 增量"。角色分配用 `finalRoleIds`，权限分配用 `finalPermissionCodes`；两者按 `targetType` 取用。
 
 ### 5.5 并发下的约束校验
 
@@ -388,30 +395,32 @@ Set<String> resolve(long userId);
 | 自行处理异常情况 | 用户不存在或已停用返回空集合，不抛异常、不返回 null |
 | 不抛出与权限无关的异常 | 重载失败时返回旧值或空集合并告警 |
 
-实现方在 `rbac-cache`（缓存装饰 + 惰性重建 + 单飞），计算逻辑在 `rbac-core`。
+实现方在 `rbac-cache`（`PermissionSnapshot` + 单飞重建）；快照数据由 `rbac-core` 通过 `PermissionSnapshotSource` 提供，计算逻辑在 core。cache 不直接依赖 core 实现。
 
-### 7.2 ConstraintValidator
+### 7.2 ConstraintValidator（rbac-core 内部）
 
 ```java
 interface ConstraintValidator {
     void validate(AuthorizationCommand cmd);
 }
 
-interface AuthorizationCommand {
-    long operatorId();
-    long targetUserId();
-    long targetRoleId();
-    Set<Long> finalRoleIds();     // 本次操作完成后的最终角色集合
-}
+record AuthorizationCommand(
+    long operatorId,
+    TargetType targetType,              // USER_ROLES / ROLE_PERMISSIONS / USER_STATUS / ROLE_STATUS / ROLE_DELETE / PERMISSION_DELETE
+    long targetUserId,
+    long targetRoleId,
+    Set<Long> finalRoleIds,             // 角色分配时使用
+    Set<String> finalPermissionCodes)   // 权限分配时使用
+{}
 ```
 
-实现散落在 `rbac-core` 内，通过 `rbac-api` 的接口被调用。
+`ConstraintValidator` 与 `AuthorizationCommand` 是 **core 内部扩展点**，不进入 `rbac-api`。`rbac-api` 只暴露 `UserAdminService` / `RoleAdminService` 作为入口；`rbac-admin` 调用入口，core 在事务内执行校验链。这样既保持严格模块依赖，又避免把内部约束模型变成公共契约。
 
 ### 7.3 失效通知
 
 ```java
 record CacheInvalidateEvent(
-    ChangeType type,     // PERM_CHANGED / TOKEN_REVOKED / TOKEN_REVOKED_GLOBAL
+    ChangeType type,     // PERM_CHANGED / TOKEN_REVOKED
     long version,
     Long targetUserId)
 {}
@@ -420,16 +429,17 @@ record CacheInvalidateEvent(
 | 要求 | 依据 |
 |---|---|
 | 必须在事务提交后发布 | 顺序错误会把旧数据写回缓存 |
-| 发布失败不影响业务成功 | TTL 兜底 |
-| 消息体保持极小，不含数据 | 只通知丢弃缓存，内容由各实例自行重载 |
+| 发布失败不影响业务成功 | 软 TTL 兜底 |
+| 消息体保持极小，不含数据 | 只通知标记失效，内容由各实例自行重载 |
 | 采用失效而非更新语义 | 无论事件到达顺序如何，重载都取数据库当前状态，不存在旧事件覆盖新状态 |
 | 新增缓存对象时必须同步更新失效逻辑 | 升级时最易漏的一项 |
+| 登录与刷新不发布事件 | 多会话：不改 `token_version`，无失效需要广播 |
 
 ## 8. 升级代价
 
 | 动作 | 无预留所需改动 | 本设计所需改动 |
 |---|---|---|
-| RBAC1 加继承 | 加列与索引、改实体、改映射、改接口响应、改前端列表与表单、改权限计算、改缓存 SQL、全量回归 | 填数据、改缓存 SQL 多取一列、前端列表改树形、表单加下拉 |
+| RBAC1 加继承 | 加列与索引、改实体、改映射、改接口响应、改前端列表与表单、改权限计算、改快照加载 SQL、全量回归 | 填数据、快照加载 SQL 多取一列、前端列表改树形、表单加下拉 |
 | RBAC2 加约束 | 建表、设计校验插入位置、改所有授权接口、改前端提示 | 建表、新增 2 个校验器类、新增页面 |
 | RBAC3 | 可能需重新设计继承与约束的交互 | 无动作 |
 
@@ -448,7 +458,7 @@ record CacheInvalidateEvent(
 - 6 张表创建完成，Flyway 脚本可重复执行
 - 鉴权链路生效：令牌校验、权限码判定、默认拒绝
 - 构建门禁全部通过：接口权限覆盖、权限码一致性、审计声明、ArchUnit
-- 三层失效机制可用，并做过停掉 Redis 的演练
+- 快照软 TTL + 广播 + 启动/重连失效可用，并做过停掉 Redis 的演练
 - CHANGE 审计与业务同事务，做过异常注入测试
 - 4 个 RBAC0 校验器生效
 - A 档接口 P99 ≤ 30ms
@@ -460,7 +470,7 @@ record CacheInvalidateEvent(
 - `inherit_role_id` 配置完成，灰度期无异常
 - 方向断言测试通过
 - 环检测生效：成环被拒，脏数据成环降级不报 500
-- 缓存重载 SQL 已包含 `inherit_role_id`，失效广播覆盖该缓存
+- 快照加载 SQL 已包含 `inherit_role_id`，失效广播标记整个快照
 - 未配置继承的用户权限快照零差异
 - 回滚方案已验证：清空 `inherit_role_id` 回到 RBAC0 行为
 - 03 / 04 文档已同步字段名、接口字段与错误码
@@ -492,8 +502,8 @@ record CacheInvalidateEvent(
 | I-1 | 业务代码只依赖权限码字符串，不依赖角色、继承关系、约束规则 | 每次模型升级都要改动大量业务代码 |
 | I-2 | 鉴权主链路只做"权限码集合包含判定"，不内嵌权限模型逻辑 | 权限模型变化会渗透进安全核心 |
 | I-3 | 权限计算必须是纯函数（无副作用、不写库、不发消息） | 无法单测、无法并发安全使用、无法缓存 |
-| I-4 | 任何权限变更必须在 1 秒内使所有实例失效缓存 | 权限回收不生效 |
+| I-4 | 任何权限变更必须在 1 秒内使所有实例标记 `PermissionSnapshot` stale | 权限回收不生效 |
 | I-5 | 表结构演进只允许加表、加列、加索引，禁止改列语义或删列 | 升级被迫停机且不可回滚 |
-| I-6 | 鉴权链路必须保持零数据库查询、零网络调用 | 30ms 目标失效，存储层被打爆 |
+| I-6 | 鉴权判定必须保持零数据库查询、零网络调用；快照重建由缓存层单飞执行 | 30ms 目标失效，存储层被打爆 |
 
 升级前自检：本次改动落在哪几条不变式上？若跨多条，说明改动跨越了多个关注点，应拆分。

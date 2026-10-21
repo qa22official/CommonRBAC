@@ -89,6 +89,8 @@ npm run dev
 docker compose up --build
 ```
 
+实现 admin 初始化器后，容器首次启动必须设置 `RBAC_ADMIN_PASSWORD`（初始 admin 密码），未设置时应用启动失败；当前骨架尚未实现该初始化器。
+
 默认服务：
 
 | 服务 | 地址 | 用途 |
@@ -121,8 +123,7 @@ docker compose down
 4. [数据模型设计](./docs/03-数据模型设计.md)
 5. [接口设计](./docs/04-接口设计.md)
 6. [RBAC0 到 RBAC3 演进设计](./docs/05-RBAC0到RBAC3演进设计.md)
-7. [性能与容量设计](./docs/06-性能与容量设计.md)
-8. [团队协作与 Linux 部署](./docs/08-团队协作与Linux部署.md)
+7. [修订记录](./docs/06-修订记录.md)
 
 完整文档索引见 [docs/README.md](./docs/README.md)。
 
@@ -148,4 +149,4 @@ docker compose down
 - 一个任务使用一个 `feature` 或 `fix` 分支；
 - 合并前必须通过自动检查并由队友评审；
 - 生产环境只发布已经批准的固定版本；
-- 详细流程见 [团队协作与 Linux 部署](./docs/08-团队协作与Linux部署.md)。
+- 详细流程由团队按仓库约定维护。
