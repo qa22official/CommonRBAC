@@ -3,31 +3,81 @@ spring:
     name: rbac-system
   profiles:
     default: local
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
 
 management:
   endpoints:
     web:
+      base-path: /actuator
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: rbac-system
+      instance: ${HOSTNAME:localhost}
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    default-statement-timeout: 5
+  mapper-locations: classpath*:mapper/**/*.xml
+
+rbac:
+  auth:
+    # HS256 密钥（Base64），生产必须 ≥ 256 位；多个 kid 用逗号分隔 KID:KEY 形式
+    jwt-keys: ${RBAC_JWT_KEYS:kid1:ZmFrZS1rZXktZm9yLWxvY2FsLWVudmlyb25tZW50LW9ubHk=}
+    issuer: ${RBAC_JWT_ISS:rbac-system}
+    audience: ${RBAC_JWT_AUD:rbac-clients}
+    access-token-seconds: ${RBAC_JWT_TTL:7200}
+  cache:
+    stale-policy: ${RBAC_STALE_POLICY:fail-open}
+    ttl-seconds: ${RBAC_CACHE_TTL:30}
 
 ---
 spring:
   config:
     activate:
       on-profile: local
+  datasource:
+    url: jdbc:h2:mem:rbac_local;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration
+  cache:
+    type: none
+rbac:
+  auth:
+    issuer: rbac-system
+    audience: rbac-clients
+    jwt-keys: kid1:ZmFrZS1rZXktZm9yLWxvY2FsLWVudmlyb25tZW50LW9ubHk=
+    access-token-seconds: 7200
+    clock-skew-seconds: 60
 
 ---
 spring:
@@ -35,10 +85,21 @@ spring:
     activate:
       on-profile: container
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/${MYSQL_DATABASE:rbac}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/${MYSQL_DATABASE:rbac}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${MYSQL_USER:rbac}
     password: ${MYSQL_PASSWORD:change-me}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: true
+    default-schema: rbac
+    schemas: rbac
+    baseline-on-migrate: true
   data:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=${rbac.cache.ttl-seconds}s

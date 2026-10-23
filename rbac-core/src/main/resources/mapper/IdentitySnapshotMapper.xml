@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.core.internal.mapper.IdentitySnapshotMapper">
+
+    <select id="findByUserId" resultType="com.example.rbac.api.identity.IdentitySnapshot">
+        SELECT u.id             AS userId,
+               u.token_version  AS tokenVersion,
+               u.status = 1     AS enabled,
+               NULL             AS loadedAt,
+               NULL             AS expiresAt
+          FROM sys_user u
+         WHERE u.id = #{userId} AND u.status != 3
+    </select>
+
+    <select id="listAllUserIds" resultType="long">
+        SELECT id FROM sys_user WHERE status != 3
+    </select>
+
+    <update id="bumpTokenVersion">
+        UPDATE sys_user SET token_version = token_version + 1, updated_at = NOW() WHERE id = #{userId}
+    </update>
+</mapper>

@@ -4,50 +4,111 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Audit payload carrying every business column of {@code sys_audit_log}.
- * {@code success} maps to {@code result} (true = 1, false = 0).
- * {@code detailBefore}/{@code detailAfter} and {@code ExportDetail.condition}
- * are pre-serialized JSON strings; callers are responsible for redaction.
+ * 完整的审计记录。AuditRecorder 实现把它落 sys_audit 表。
+ * 密码/密码哈希/令牌/密钥不得出现在任何 detail 字段。
  */
-public record AuditRecord(
-        AuditCategory category,
-        Long operatorId,
-        String operatorName,
-        String action,
-        String targetType,
-        Long targetId,
-        String detailBefore,
-        String detailAfter,
-        boolean success,
-        String failReason,
-        String clientIp,
-        String userAgent,
-        String traceId,
-        String transactionId,
-        Instant eventTime,
-        ExportDetail exportDetail) {
+public class AuditRecord {
 
-    public AuditRecord {
-        Objects.requireNonNull(category, "category");
-        Objects.requireNonNull(operatorName, "operatorName");
-        Objects.requireNonNull(action, "action");
-        Objects.requireNonNull(clientIp, "clientIp");
-        Objects.requireNonNull(eventTime, "eventTime");
+    /** 结果枚举。 */
+    public static final String RESULT_SUCCESS = "SUCCESS";
+    public static final String RESULT_FAIL    = "FAIL";
+
+    private AuditCategory category;
+    private String action;
+    private String operatorName;
+    private Long operatorId;
+    private String transactionId;
+    private String targetType;
+    private String targetId;
+    private String detailBefore;
+    private String detailAfter;
+    private String result;
+    private String failReason;
+    private String clientIp;
+    private String userAgent;
+    private String traceId;
+    private Instant eventTime;
+
+    public AuditRecord() {}
+
+    public AuditRecord(AuditCategory category, String action, String operatorName, Long operatorId,
+                       String transactionId, String targetType, String targetId,
+                       String detailBefore, String detailAfter, String result, String failReason,
+                       String clientIp, String userAgent, String traceId, Instant eventTime) {
+        this.category = category;
+        this.action = action;
+        this.operatorName = operatorName;
+        this.operatorId = operatorId;
+        this.transactionId = transactionId;
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.detailBefore = detailBefore;
+        this.detailAfter = detailAfter;
+        this.result = result;
+        this.failReason = failReason;
+        this.clientIp = clientIp;
+        this.userAgent = userAgent;
+        this.traceId = traceId;
+        this.eventTime = eventTime;
     }
 
-    public enum ExportScope {
-        FILTERED,
-        ALL,
-        SINGLE
-    }
+    public AuditCategory category() { return category; }
+    public AuditCategory getCategory() { return category; }
+    public void setCategory(AuditCategory category) { this.category = category; }
 
-    /**
-     * Export metadata persisted in {@code detail_after}.
-     */
-    public record ExportDetail(ExportScope scope, long resultCount, String condition) {
+    public String action() { return action; }
+    public String getAction() { return action; }
+    public void setAction(String action) { this.action = action; }
 
-        public ExportDetail {
-            Objects.requireNonNull(scope, "scope");
-        }
-    }
+    public String operatorName() { return operatorName; }
+    public String getOperatorName() { return operatorName; }
+    public void setOperatorName(String operatorName) { this.operatorName = operatorName; }
+
+    public Long operatorId() { return operatorId; }
+    public Long getOperatorId() { return operatorId; }
+    public void setOperatorId(Long operatorId) { this.operatorId = operatorId; }
+
+    public String transactionId() { return transactionId; }
+    public String getTransactionId() { return transactionId; }
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
+
+    public String targetType() { return targetType; }
+    public String getTargetType() { return targetType; }
+    public void setTargetType(String targetType) { this.targetType = targetType; }
+
+    public String targetId() { return targetId; }
+    public String getTargetId() { return targetId; }
+    public void setTargetId(String targetId) { this.targetId = targetId; }
+
+    public String detailBefore() { return detailBefore; }
+    public String getDetailBefore() { return detailBefore; }
+    public void setDetailBefore(String detailBefore) { this.detailBefore = detailBefore; }
+
+    public String detailAfter() { return detailAfter; }
+    public String getDetailAfter() { return detailAfter; }
+    public void setDetailAfter(String detailAfter) { this.detailAfter = detailAfter; }
+
+    public String result() { return result; }
+    public String getResult() { return result; }
+    public void setResult(String result) { this.result = result; }
+
+    public String failReason() { return failReason; }
+    public String getFailReason() { return failReason; }
+    public void setFailReason(String failReason) { this.failReason = failReason; }
+
+    public String clientIp() { return clientIp; }
+    public String getClientIp() { return clientIp; }
+    public void setClientIp(String clientIp) { this.clientIp = clientIp; }
+
+    public String userAgent() { return userAgent; }
+    public String getUserAgent() { return userAgent; }
+    public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
+
+    public String traceId() { return traceId; }
+    public String getTraceId() { return traceId; }
+    public void setTraceId(String traceId) { this.traceId = traceId; }
+
+    public Instant eventTime() { return eventTime; }
+    public Instant getEventTime() { return eventTime; }
+    public void setEventTime(Instant eventTime) { this.eventTime = eventTime; }
 }

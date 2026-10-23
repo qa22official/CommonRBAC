@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.audit.internal.AuditMapper">
+
+    <resultMap id="AuditMap" type="com.example.rbac.api.audit.AuditRecord">
+        <result property="category" column="audit_category"/>
+        <result property="action" column="event_type"/>
+        <result property="transactionId" column="transaction_id"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="targetType" column="target_type"/>
+        <result property="targetId" column="target_id"/>
+        <result property="detailBefore" column="detail_before"/>
+        <result property="detailAfter" column="detail_after"/>
+        <result property="result" column="result"/>
+        <result property="failReason" column="fail_reason"/>
+        <result property="clientIp" column="client_ip"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="traceId" column="trace_id"/>
+        <result property="eventTime" column="event_time"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO sys_audit
+            (audit_category, event_type, transaction_id, operator_id, operator_name, target_type, target_id,
+             detail_before, detail_after, result, fail_reason, client_ip, user_agent, trace_id, event_time)
+        VALUES
+            (#{category}, #{action}, #{transactionId}, #{operatorId}, #{operatorName}, #{targetType}, #{targetId},
+             #{detailBefore}, #{detailAfter}, #{result}, #{failReason}, #{clientIp}, #{userAgent}, #{traceId}, NOW())
+    </insert>
+
+    <select id="query" resultMap="AuditMap">
+        SELECT audit_category, event_type, transaction_id, operator_id, operator_name, target_type, target_id,
+               detail_before, detail_after, result, fail_reason, client_ip, user_agent, trace_id, event_time
+        FROM sys_audit
+        <where>
+            <if test="category != null">AND audit_category = #{category}</if>
+            <if test="eventType != null and eventType != ''">AND event_type = #{eventType}</if>
+            <if test="operatorId != null">AND operator_id = #{operatorId}</if>
+            <if test="targetType != null and targetType != ''">AND target_type = #{targetType}</if>
+            <if test="from != null">AND event_time >= #{from}</if>
+            <if test="to != null">AND event_time &lt;= #{to}</if>
+            <if test="cursor != null and cursor != ''">AND event_time &lt; #{cursor}</if>
+        </where>
+        ORDER BY event_time DESC LIMIT #{limit}
+    </select>
+</mapper>

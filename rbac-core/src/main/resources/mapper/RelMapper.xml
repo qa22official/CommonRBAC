@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.core.internal.mapper.RelMapper">
+
+    <delete id="clearUserRoles">DELETE FROM sys_user_role WHERE user_id = #{userId}</delete>
+    <insert id="batchInsertUserRoles">
+        INSERT INTO sys_user_role (user_id, role_id, created_at) VALUES
+        <foreach collection="roleIds" item="rid" separator=",">(#{userId}, #{rid}, NOW())</foreach>
+    </insert>
+
+    <delete id="clearRolePermissions">DELETE FROM sys_role_permission WHERE role_id = #{roleId}</delete>
+    <insert id="batchInsertRolePermissions">
+        INSERT INTO sys_role_permission (role_id, permission_id, created_at) VALUES
+        <foreach collection="permissionIds" item="pid" separator=",">(#{roleId}, #{pid}, NOW())</foreach>
+    </insert>
+
+    <select id="findRoleIdsByUserId" resultType="long">
+        SELECT role_id FROM sys_user_role WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPermissionIdsByRoleId" resultType="long">
+        SELECT permission_id FROM sys_role_permission WHERE role_id = #{roleId}
+    </select>
+
+    <select id="countUsersWithRole" resultType="int">
+        SELECT COUNT(*) FROM sys_user_role WHERE role_id = #{roleId}
+    </select>
+
+    <select id="countRolesWithPermission" resultType="int">
+        SELECT COUNT(*) FROM sys_role_permission WHERE permission_id = #{permissionId}
+    </select>
+</mapper>
