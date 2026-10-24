@@ -1,15 +1,26 @@
-:root {
-  font-family: Arial, sans-serif;
-  color: #213547;
-  background: #f5f7fa;
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
+  font-family:
+    'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    Arial, sans-serif;
+  color: #303133;
+  background-color: #f0f2f5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
 
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 64px 24px;
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
