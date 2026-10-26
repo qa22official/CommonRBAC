@@ -12,7 +12,8 @@ public record UpdatePermissionCommand(
         String httpMethod,
         String icon,
         Integer sort,
-        Integer status) {
+        Integer status,
+        String code) {
 
     public UpdatePermissionCommand {
         Objects.requireNonNull(name, "name");

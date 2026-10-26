@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.audit.internal.mapper.AuditLogMapper">
+
+    <insert id="insert" parameterType="com.example.rbac.audit.internal.domain.AuditLogEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_audit_log
+            (audit_category, operator_id, operator_name, action, target_type, target_id,
+             detail_before, detail_after, result, fail_reason, transaction_id,
+             client_ip, user_agent, trace_id, event_time, created_at)
+        VALUES
+            (#{auditCategory}, #{operatorId}, #{operatorName}, #{action}, #{targetType}, #{targetId},
+             #{detailBefore}, #{detailAfter}, #{result}, #{failReason}, #{transactionId},
+             #{clientIp}, #{userAgent}, #{traceId}, #{eventTime}, #{createdAt})
+    </insert>
+
+    <select id="query" resultType="com.example.rbac.audit.internal.domain.AuditLogEntity">
+        SELECT id, audit_category, operator_id, operator_name, action, target_type, target_id,
+               detail_before, detail_after, result, fail_reason, transaction_id,
+               client_ip, user_agent, trace_id, event_time, created_at
+        FROM sys_audit_log
+        WHERE event_time &gt;= #{startTime}
+          AND event_time &lt;= #{endTime}
+        <if test="category != null and category != ''">
+            AND audit_category = #{category}
+        </if>
+        <if test="operatorId != null">
+            AND operator_id = #{operatorId}
+        </if>
+        <if test="action != null and action != ''">
+            AND action = #{action}
+        </if>
+        <if test="targetType != null and targetType != ''">
+            AND target_type = #{targetType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="result != null">
+            AND result = #{result}
+        </if>
+        <if test="lastId != null">
+            AND id &lt; #{lastId}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

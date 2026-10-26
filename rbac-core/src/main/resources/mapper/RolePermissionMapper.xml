@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.core.internal.mapper.RolePermissionMapper">
+
+    <select id="findAllEnabled" resultType="com.example.rbac.core.internal.domain.RolePermissionRow">
+        SELECT rp.role_id, p.id AS permission_id, p.code AS permission_code
+        FROM sys_role_permission rp
+        JOIN sys_permission p ON p.id = rp.permission_id
+        WHERE p.status = 1
+    </select>
+
+    <select id="findCodesByRoleId" resultType="string">
+        SELECT p.code
+        FROM sys_role_permission rp
+        JOIN sys_permission p ON p.id = rp.permission_id
+        WHERE rp.role_id = #{roleId}
+          AND p.status &lt;&gt; 2
+        ORDER BY p.code
+    </select>
+
+    <select id="findPermissionIdsByRoleId" resultType="long">
+        SELECT permission_id
+        FROM sys_role_permission
+        WHERE role_id = #{roleId}
+    </select>
+
+    <delete id="deleteByRoleId">
+        DELETE FROM sys_role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insert">
+        INSERT INTO sys_role_permission (role_id, permission_id, created_by, created_at)
+        VALUES (#{roleId}, #{permissionId}, #{operatorId}, #{now})
+    </insert>
+
+    <select id="countByRoleId" resultType="long">
+        SELECT COUNT(*) FROM sys_role_permission WHERE role_id = #{roleId}
+    </select>
+
+    <select id="countByPermissionId" resultType="long">
+        SELECT COUNT(*) FROM sys_role_permission WHERE permission_id = #{permissionId}
+    </select>
+
+</mapper>

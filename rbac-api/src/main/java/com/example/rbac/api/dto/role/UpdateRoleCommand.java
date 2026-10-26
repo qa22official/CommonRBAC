@@ -7,7 +7,8 @@ public record UpdateRoleCommand(
         long roleId,
         String name,
         String description,
-        Integer sort) {
+        Integer sort,
+        Long inheritRoleId) {
 
     public UpdateRoleCommand {
         Objects.requireNonNull(name, "name");

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.core.internal.mapper.UserMapper">
+
+    <sql id="columns">
+        id, username, password_hash, nickname, email, phone, status, token_version,
+        must_change_password, role_version, fail_count, locked_until, last_login_at,
+        remark, created_by, created_at, updated_by, updated_at
+    </sql>
+
+    <select id="findByUsername" resultType="com.example.rbac.core.internal.domain.UserEntity">
+        SELECT <include refid="columns"/>
+        FROM sys_user
+        WHERE username = #{username}
+    </select>
+
+    <select id="findById" resultType="com.example.rbac.core.internal.domain.UserEntity">
+        SELECT <include refid="columns"/>
+        FROM sys_user
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByIdForUpdate" resultType="com.example.rbac.core.internal.domain.UserEntity">
+        SELECT <include refid="columns"/>
+        FROM sys_user
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <sql id="pageFilter">
+        WHERE status &lt;&gt; 2
+        <if test="keyword != null and keyword != ''">
+            AND username LIKE CONCAT(#{keyword}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </sql>
+
+    <select id="findPage" resultType="com.example.rbac.core.internal.domain.UserEntity">
+        SELECT <include refid="columns"/>
+        FROM sys_user
+        <include refid="pageFilter"/>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_user
+        <include refid="pageFilter"/>
+    </select>
+
+    <insert id="insert" parameterType="com.example.rbac.core.internal.domain.UserEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user
+            (username, password_hash, nickname, email, phone, status, token_version,
+             must_change_password, role_version, fail_count, locked_until, last_login_at,
+             remark, created_by, created_at, updated_by, updated_at)
+        VALUES
+            (#{username}, #{passwordHash}, #{nickname}, #{email}, #{phone}, #{status}, #{tokenVersion},
+             #{mustChangePassword}, #{roleVersion}, #{failCount}, #{lockedUntil}, #{lastLoginAt},
+             #{remark}, #{createdBy}, #{createdAt}, #{updatedBy}, #{updatedAt})
+    </insert>
+
+    <update id="updateProfile">
+        UPDATE sys_user
+        SET nickname = #{nickname},
+            email = #{email},
+            phone = #{phone},
+            remark = #{remark},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="logicalDelete">
+        UPDATE sys_user
+        SET status = 2,
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_user
+        SET status = #{status},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+    </update>
+
+    <update id="updatePassword">
+        UPDATE sys_user
+        SET password_hash = #{passwordHash},
+            must_change_password = #{mustChange},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementTokenVersion">
+        UPDATE sys_user
+        SET token_version = token_version + 1
+        <if test="clearMustChange">
+            , must_change_password = 0
+        </if>
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrementRoleVersion">
+        UPDATE sys_user
+        SET role_version = role_version + 1,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="recordLoginFailure">
+        UPDATE sys_user
+        SET fail_count = fail_count + 1,
+            locked_until = CASE
+                WHEN fail_count + 1 &gt;= #{threshold} THEN #{lockedUntil}
+                ELSE locked_until
+            END,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="clearLoginFailure">
+        UPDATE sys_user
+        SET fail_count = 0,
+            locked_until = NULL,
+            last_login_at = #{lastLoginAt},
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <update id="resetLoginFailures">
+        UPDATE sys_user
+        SET fail_count = 0,
+            locked_until = NULL,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <select id="countEnabledSuperAdmins" resultType="long">
+        SELECT COUNT(DISTINCT u.id)
+        FROM sys_user u
+        JOIN sys_user_role ur ON ur.user_id = u.id
+        JOIN sys_role r ON r.id = ur.role_id
+        WHERE r.code = 'SUPER_ADMIN'
+          AND r.status = 1
+          AND u.status = 1
+    </select>
+
+    <select id="countByRoleCode" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_user_role ur
+        JOIN sys_role r ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND r.code = #{roleCode}
+          AND r.status = 1
+    </select>
+
+</mapper>

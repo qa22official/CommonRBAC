@@ -7,5 +7,7 @@ public record RoleListItem(
         String description,
         int status,
         boolean builtin,
-        int sort) {
+        int sort,
+        Long inheritRoleId,
+        String inheritRoleName) {
 }

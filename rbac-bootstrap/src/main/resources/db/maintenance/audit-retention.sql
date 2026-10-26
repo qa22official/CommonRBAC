@@ -1,0 +1,11 @@
+-- 手工运维任务，不随应用启动，也不由 Flyway 执行（03 §4.7 / 01 FR-L8）。
+-- 默认保留 180 天；建议每日低峰分批执行，避免长事务与锁表。
+-- 应用账号不提供删除审计日志的接口，清理动作由独立运维账号执行并记录系统日志。
+--
+-- 参数：cutoff = 当前时间 - 180 天（UTC）
+-- MySQL 示例：
+--   SET @cutoff = UTC_TIMESTAMP() - INTERVAL 180 DAY;
+--   DELETE FROM sys_audit_log WHERE event_time < @cutoff LIMIT 5000;
+--
+-- 数据量较大时按 event_time 做 RANGE 分区并使用 DROP PARTITION。
+DELETE FROM sys_audit_log WHERE event_time < ? LIMIT 5000;

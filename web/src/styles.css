@@ -1,15 +1,766 @@
 :root {
-  font-family: Arial, sans-serif;
-  color: #213547;
-  background: #f5f7fa;
+  font-family:
+    "Segoe UI", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial,
+    sans-serif;
+  color: #1f2d3d;
+  background: #f0f2f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
-body {
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
   margin: 0;
 }
 
-.page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 64px 24px;
+body {
+  background: #f0f2f5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+/* ---------------- 通用页面结构 ---------------- */
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-heading h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.page-heading p {
+  margin: 0;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.page-heading__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.filter-card .el-card__body,
+.table-card .el-card__body {
+  padding: 16px;
+}
+
+.filter-form {
+  margin-bottom: -18px;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table-card .el-table {
+  width: 100%;
+}
+
+.table-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+
+.table-actions .el-button + .el-button {
+  margin-left: 0;
+}
+
+.dialog-alert {
+  margin-bottom: 16px;
+}
+
+.dialog-tip {
+  margin: 4px 0 0;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.form-tip {
+  width: 100%;
+  margin-top: 4px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.text-muted {
+  color: #909399;
+  font-size: 12px;
+}
+
+.mono {
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+}
+
+/* ---------------- 登录页 ---------------- */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: linear-gradient(135deg, #eef3fa 0%, #f8fafc 55%, #eef3fa 100%);
+}
+
+.login-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  width: min(980px, 100%);
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(31, 45, 61, 0.12);
+}
+
+.login-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px 48px;
+  color: #ffffff;
+  background: #1f2d3d;
+}
+
+.login-intro h1 {
+  margin: 20px 0 8px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.login-intro > p {
+  margin: 0;
+  color: #aeb9c5;
+  font-size: 14px;
+}
+
+.login-features {
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #c8d1db;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.login-features li::before {
+  content: "•";
+  margin-right: 8px;
+  color: #409eff;
+}
+
+.login-card {
+  border: none;
+  border-radius: 0;
+}
+
+.login-card .el-card__header {
+  padding: 28px 28px 8px;
+  border-bottom: none;
+}
+
+.login-card .el-card__body {
+  padding: 16px 28px 28px;
+}
+
+.login-card__header h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.login-card__header p {
+  margin: 0;
+  color: #909399;
+  font-size: 13px;
+}
+
+.login-alert {
+  margin-bottom: 16px;
+}
+
+.login-submit {
+  width: 100%;
+}
+
+.login-tip {
+  margin: 4px 0 0;
+  color: #a8abb2;
+  font-size: 12px;
+  text-align: center;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #409eff;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.brand-mark--large {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 28px;
+}
+
+/* ---------------- 强制改密 / 404 ---------------- */
+
+.centered-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f0f2f5;
+}
+
+.password-card {
+  width: min(540px, 100%);
+}
+
+.password-card .el-card__header {
+  padding: 20px 24px;
+}
+
+.password-card__header h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.password-card__header p {
+  margin: 0;
+  color: #909399;
+  font-size: 13px;
+}
+
+.password-alert {
+  margin-bottom: 20px;
+}
+
+.password-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- 密码强度 ---------------- */
+
+.password-strength {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.password-strength__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: #606266;
+  font-size: 12px;
+}
+
+.password-strength__label {
+  color: #909399;
+}
+
+.password-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #909399;
+  font-size: 12px;
+}
+
+.password-rules li::before {
+  content: "○";
+  margin-right: 4px;
+}
+
+.password-rules li.is-ok {
+  color: #67c23a;
+}
+
+.password-rules li.is-ok::before {
+  content: "●";
+}
+
+/* ---------------- 主布局 ---------------- */
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-aside {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #1f2d3d;
+  transition: width 0.2s ease;
+}
+
+.app-brand {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-brand.is-collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.app-brand__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.app-brand__text strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-brand__text span {
+  margin-top: 2px;
+  color: #8fa0b3;
+  font-size: 11px;
+}
+
+.app-menu {
+  flex: 1;
+  border-right: none;
+  background: #1f2d3d;
+}
+
+.app-menu .el-menu-item {
+  color: #c0c4cc;
+}
+
+.app-menu .el-menu-item:hover {
+  background: #2b3a4a;
+  color: #ffffff;
+}
+
+.app-menu .el-menu-item.is-active {
+  background: #409eff;
+  color: #ffffff;
+}
+
+.app-aside__footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #7a8899;
+  font-size: 11px;
+}
+
+.app-body {
+  min-width: 0;
+}
+
+.app-header {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.app-header__left,
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.header-roles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: #303133;
+  cursor: pointer;
+  outline: none;
+}
+
+.user-trigger:hover {
+  background: #f5f7fa;
+}
+
+.user-avatar {
+  background: #409eff;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.user-name {
+  max-width: 140px;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-main {
+  padding: 20px;
+  background: #f0f2f5;
+}
+
+/* ---------------- 仪表盘 ---------------- */
+
+.panel-card .el-card__header {
+  padding: 14px 18px;
+}
+
+.panel-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.permission-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.permission-summary__number {
+  color: #409eff;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.permission-summary__label {
+  color: #909399;
+  font-size: 12px;
+}
+
+.permission-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.permission-tag {
+  max-width: 100%;
+}
+
+.quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.quick-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: #ffffff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quick-link:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.12);
+}
+
+.quick-link__icon {
+  grid-row: span 2;
+  color: #409eff;
+  font-size: 24px;
+}
+
+.quick-link__title {
+  color: #1f2d3d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quick-link__desc {
+  color: #909399;
+  font-size: 12px;
+}
+
+/* ---------------- 权限树 ---------------- */
+
+.permission-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permission-tree__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.permission-tree {
+  max-height: 420px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+}
+
+.permission-tree .el-tree {
+  background: transparent;
+}
+
+.perm-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.perm-node__name {
+  font-size: 13px;
+}
+
+.perm-node__code {
+  color: #909399;
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+}
+
+/* ---------------- 审计日志 ---------------- */
+
+.audit-filter__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.audit-filter .el-form-item {
+  margin-bottom: 12px;
+}
+
+.audit-detail {
+  padding: 8px 16px 16px;
+  background: #fafafa;
+}
+
+.json-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.json-panel h4 {
+  margin: 0 0 6px;
+  color: #606266;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.json-block {
+  max-height: 320px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #303133;
+  font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* ---------------- 429 限流提示 ---------------- */
+
+.rate-limit-notice {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  z-index: 3000;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+}
+
+.rate-limit-notice__count {
+  margin: 0 2px;
+  font-size: 15px;
+}
+
+/* ---------------- 响应式 ---------------- */
+
+@media (max-width: 1100px) {
+  .header-roles {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .login-panel {
+    grid-template-columns: 1fr;
+    width: min(520px, 100%);
+  }
+
+  .login-intro {
+    padding: 28px 28px 24px;
+  }
+
+  .login-intro h1 {
+    margin-top: 14px;
+    font-size: 22px;
+  }
+
+  .login-features {
+    display: none;
+  }
+
+  .login-card .el-card__header {
+    padding-top: 20px;
+  }
+
+  .app-main {
+    padding: 12px;
+  }
+
+  .page-heading {
+    flex-direction: column;
+  }
+
+  .json-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .table-pagination {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .user-name {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 10px;
+  }
+
+  .app-header .el-breadcrumb {
+    display: none;
+  }
+
+  .page-heading h1 {
+    font-size: 19px;
+  }
+
+  .filter-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 12px;
+  }
+
+  .audit-filter__row {
+    gap: 0;
+  }
 }

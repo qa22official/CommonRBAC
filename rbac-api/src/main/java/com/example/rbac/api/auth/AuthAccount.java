@@ -15,6 +15,7 @@ public record AuthAccount(
         int status,
         boolean mustChangePassword,
         int tokenVersion,
+        int failCount,
         Instant lockedUntil) {
 
     public AuthAccount {

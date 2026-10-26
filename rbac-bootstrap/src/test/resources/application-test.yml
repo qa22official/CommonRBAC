@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: "jdbc:h2:mem:rbac;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
+    username: sa
+    password: ""
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+rbac:
+  jwt:
+    issuer: rbac-system
+    audience: rbac-admin
+    active-kid: "1"
+    ttl: 2h
+    clock-skew-seconds: 60
+    keys:
+      "1": "test-only-jwt-secret-at-least-32-bytes-0123456789"
+  cache:
+    soft-ttl-seconds: 30
+    stale-policy: fail-open
+    load-on-startup: true
+  redis:
+    enabled: false
+  client-ip:
+    trusted-proxies:
+      - 127.0.0.1
+      - 10.0.0.0/8
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+  admin:
+    bootstrap:
+      enabled: true
+      username: admin
+      nickname: 管理员

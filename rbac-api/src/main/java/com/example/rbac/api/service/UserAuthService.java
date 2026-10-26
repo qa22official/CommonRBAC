@@ -18,6 +18,12 @@ public interface UserAuthService {
     void recordLoginSuccess(long userId);
 
     /**
+     * Clears a lock that has already expired, so the next failure starts a new
+     * counting window instead of immediately re-locking the account.
+     */
+    void resetLoginFailures(long userId);
+
+    /**
      * Updates the password hash, clears {@code must_change_password}, increments
      * {@code token_version}, and returns the new version.
      */

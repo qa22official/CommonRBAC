@@ -6,6 +6,10 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: container
       SERVER_PORT: 8080
+      RBAC_ADMIN_PASSWORD: ${RBAC_ADMIN_PASSWORD:?set RBAC_ADMIN_PASSWORD (initial admin password)}
+      RBAC_JWT_KEY_1: ${RBAC_JWT_KEY_1:?set RBAC_JWT_KEY_1 (at least 32 bytes)}
+      RBAC_TRUSTED_PROXIES: ${RBAC_TRUSTED_PROXIES:-}
+      RBAC_CORS_ORIGINS: ${RBAC_CORS_ORIGINS:-}
     ports:
       - "8080:8080"
     depends_on:
@@ -16,6 +20,7 @@ services:
 
   mysql:
     image: mysql:8.4
+    command: ["--default-time-zone=+00:00"]
     environment:
       MYSQL_DATABASE: rbac
       MYSQL_USER: rbac

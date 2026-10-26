@@ -10,5 +10,7 @@ public record RoleDetail(
         int sort,
         int permVersion,
         long userCount,
-        long permissionCount) {
+        long permissionCount,
+        Long inheritRoleId,
+        String inheritRoleName) {
 }

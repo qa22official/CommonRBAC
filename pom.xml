@@ -16,7 +16,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>rbac-system</name>
-    <description>RBAC modular monolith skeleton</description>
+    <description>RBAC modular monolith (RBAC0 + RBAC1 inheritance)</description>
 
     <modules>
         <module>rbac-api</module>
@@ -34,6 +34,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
+        <jjwt.version>0.12.6</jjwt.version>
+        <archunit.version>1.3.0</archunit.version>
     </properties>
 
     <dependencyManagement>
@@ -78,10 +80,47 @@
                 <artifactId>mybatis-spring-boot-starter</artifactId>
                 <version>${mybatis-spring-boot.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
+        <plugins>
+            <!-- The documentation requires JDK 21. Keep this bound to the
+                 lifecycle; a pluginManagement entry alone would silently allow
+                 any JDK and make the ArchUnit/test result environment-dependent. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-java-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>

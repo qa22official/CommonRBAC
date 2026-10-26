@@ -9,6 +9,7 @@ import com.example.rbac.api.dto.role.RoleDetail;
 import com.example.rbac.api.dto.role.RoleListItem;
 import com.example.rbac.api.dto.role.RolePermissions;
 import com.example.rbac.api.dto.role.RoleQuery;
+import com.example.rbac.api.dto.role.RoleTreeNode;
 import com.example.rbac.api.dto.role.UpdateRoleCommand;
 
 import java.util.List;
@@ -22,6 +23,8 @@ public interface RoleAdminService {
     PageResult<RoleListItem> list(RoleQuery query);
 
     List<RoleSummary> options();
+
+    List<RoleTreeNode> tree();
 
     Optional<RoleDetail> findDetail(long roleId);
 

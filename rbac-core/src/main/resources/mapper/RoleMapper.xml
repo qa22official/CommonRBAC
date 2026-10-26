@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.core.internal.mapper.RoleMapper">
+
+    <sql id="pageFilter">
+        WHERE r.status &lt;&gt; 2
+        <if test="keyword != null and keyword != ''">
+            AND (r.code LIKE CONCAT(#{keyword}, '%') OR r.name LIKE CONCAT(#{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND r.status = #{status}
+        </if>
+    </sql>
+
+    <select id="findPage" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT r.id, r.code, r.name, r.description, r.inherit_role_id, r.status,
+               r.is_builtin, r.perm_version, r.sort, r.created_at, r.updated_at,
+               p.name AS inherit_role_name
+        FROM sys_role r
+        LEFT JOIN sys_role p ON p.id = r.inherit_role_id
+        <include refid="pageFilter"/>
+        ORDER BY r.sort, r.id
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_role r
+        <include refid="pageFilter"/>
+    </select>
+
+    <select id="findEnabledOptions" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT id, code, name, sort
+        FROM sys_role
+        WHERE status = 1
+        ORDER BY sort, id
+    </select>
+
+    <select id="findAll" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT id, code, name, description, inherit_role_id, status, is_builtin, perm_version, sort
+        FROM sys_role
+        WHERE status &lt;&gt; 2
+        ORDER BY id
+    </select>
+
+    <select id="lockAllForInheritance" resultType="long">
+        SELECT id
+        FROM sys_role
+        ORDER BY id
+        FOR UPDATE
+    </select>
+
+    <select id="findById" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT r.id, r.code, r.name, r.description, r.inherit_role_id, r.status,
+               r.is_builtin, r.perm_version, r.sort, r.created_at, r.updated_at,
+               p.name AS inherit_role_name,
+               (SELECT COUNT(*) FROM sys_user_role ur WHERE ur.role_id = r.id) AS user_count,
+               (SELECT COUNT(*) FROM sys_role_permission rp WHERE rp.role_id = r.id) AS permission_count
+        FROM sys_role r
+        LEFT JOIN sys_role p ON p.id = r.inherit_role_id
+        WHERE r.id = #{id}
+          AND r.status &lt;&gt; 2
+    </select>
+
+    <select id="findByIdForUpdate" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT id, code, name, description, inherit_role_id, status, is_builtin,
+               perm_version, sort, created_at, updated_at
+        FROM sys_role
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+        FOR UPDATE
+    </select>
+
+    <select id="findByCode" resultType="com.example.rbac.core.internal.domain.RoleEntity">
+        SELECT id, code, name, description, inherit_role_id, status, is_builtin,
+               perm_version, sort, created_at, updated_at
+        FROM sys_role
+        WHERE code = #{code}
+    </select>
+
+    <insert id="insert" parameterType="com.example.rbac.core.internal.domain.RoleEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role
+            (code, name, description, inherit_role_id, status, is_builtin, perm_version,
+             sort, created_by, created_at, updated_by, updated_at)
+        VALUES
+            (#{code}, #{name}, #{description}, #{inheritRoleId}, #{status}, #{isBuiltin}, #{permVersion},
+             #{sort}, #{createdBy}, #{createdAt}, #{updatedBy}, #{updatedAt})
+    </insert>
+
+    <update id="update">
+        UPDATE sys_role
+        SET name = #{name},
+            description = #{description},
+            sort = #{sort},
+            inherit_role_id = #{inheritRoleId},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+    </update>
+
+    <update id="logicalDelete">
+        UPDATE sys_role
+        SET status = 2,
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_role
+        SET status = #{status},
+            updated_by = #{operatorId},
+            updated_at = #{now}
+        WHERE id = #{id}
+          AND status &lt;&gt; 2
+    </update>
+
+    <update id="incrementPermVersion">
+        UPDATE sys_role
+        SET perm_version = perm_version + 1,
+            updated_at = #{now}
+        WHERE id = #{id}
+    </update>
+
+    <select id="countByInheritRoleId" resultType="long">
+        SELECT COUNT(*) FROM sys_role
+        WHERE inherit_role_id = #{roleId}
+          AND status &lt;&gt; 2
+    </select>
+
+</mapper>

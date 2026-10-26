@@ -1,0 +1,11 @@
+.git
+.m2repo
+.mvn-local-settings.xml
+web/node_modules
+web/dist
+data
+docs
+example
+*.log
+.env
+.env.*

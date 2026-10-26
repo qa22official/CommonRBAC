@@ -7,7 +7,8 @@ public record CreateRoleCommand(
         String code,
         String name,
         String description,
-        Integer sort) {
+        Integer sort,
+        Long inheritRoleId) {
 
     public CreateRoleCommand {
         Objects.requireNonNull(code, "code");
